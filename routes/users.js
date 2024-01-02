@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const conn = require("../mariadb");
+const { StatusCodes } = require("http-status-codes");
 
 router.use(express.json());
 
@@ -14,10 +15,10 @@ router.post("/join", (req, res) => {
   conn.query(sql, values, (err, results) => {
     if (err) {
       console.log(err);
-      return res.status(400).end(); // BAD REQUEST
+      return res.status(StatusCodes.BAD_REQUEST).end(); // BAD REQUEST
     }
 
-    res.status(201).json(results);
+    res.status(StatusCodes.CREATED).json(results);
   });
 
   res.json("회원가입");
