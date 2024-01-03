@@ -1,11 +1,7 @@
 import conn from "../mariadb";
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-
-interface CategoryDTO {
-  id: number;
-  name: string;
-}
+import { CategoryDTO } from "../types/categories/category";
 
 const allCategory = (req: Request, res: Response): void => {
   // 카테고리 전체 목록 리스트

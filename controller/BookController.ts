@@ -1,24 +1,7 @@
 import conn from "../mariadb";
 import { StatusCodes } from "http-status-codes";
 import { Request, Response } from "express";
-
-interface BookDTO {
-  id: number;
-  title: string;
-  img: number;
-  category: string;
-  form: string;
-  isbn: string;
-  summary: string;
-  detail: string;
-  author: string;
-  page: number;
-  contents: string;
-  price: number;
-  likes: number;
-  liked: boolean;
-  pub_date: Date;
-}
+import { BookDTO } from "../types/books/book";
 
 const allBooks = (req: Request, res: Response): void => {
   let category_id: string | undefined = req.query.category_id as string;

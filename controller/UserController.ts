@@ -5,14 +5,9 @@ import crypto from "crypto";
 import dotenv from "dotenv";
 import { Request, Response } from "express";
 import { ResultSetHeader } from "mysql2";
+import { UserDTO } from "../types/users/user";
 
 dotenv.config();
-
-interface User {
-  email: string;
-  password: string;
-  salt: string;
-}
 
 const join = (req: Request, res: Response): void => {
   const { email, password } = req.body;
@@ -26,7 +21,7 @@ const join = (req: Request, res: Response): void => {
 
   let values = [email, hashPassword, salt];
 
-  conn.query(sql, values, (err: Error, results: User[]) => {
+  conn.query(sql, values, (err: Error, results: UserDTO[]) => {
     if (err) {
       console.log(err);
       return res.status(StatusCodes.BAD_REQUEST).end();
@@ -40,7 +35,7 @@ const login = (req: Request, res: Response): void => {
   const { email, password } = req.body;
 
   let sql = `SELECT * FROM users WHERE email = ?`;
-  conn.query(sql, email, (err: Error, results: User[]) => {
+  conn.query(sql, email, (err: Error, results: UserDTO[]) => {
     if (err) {
       console.log(err);
       return res.status(StatusCodes.BAD_REQUEST).end();
@@ -81,7 +76,7 @@ const PasswordResetrequest = (req: Request, res: Response): void => {
   const { email } = req.body;
 
   let sql = `SELECT * FROM users WHERE email = ?`;
-  conn.query(sql, email, (err: Error, results: User[]) => {
+  conn.query(sql, email, (err: Error, results: UserDTO[]) => {
     if (err) {
       console.log(err);
       return res.status(StatusCodes.BAD_REQUEST).end();
