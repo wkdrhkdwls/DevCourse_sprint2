@@ -1,19 +1,17 @@
-// express 모듈
-const express = require("express");
-const app = express();
+import dotenv from "dotenv";
+import express, { Application } from "express";
+import userRouter from "./routes/users";
+import bookRouter from "./routes/books";
+import categoryRouter from "./routes/category";
+import likeRouter from "./routes/likes";
+import cartRouter from "./routes/carts";
+import orderRouter from "./routes/orders";
 
-// dotenv 모듈
-const dotenv = require("dotenv");
 dotenv.config();
 
-app.listen(process.env.PORT);
+const app: Application = express();
 
-const userRouter = require("./routes/users");
-const bookRouter = require("./routes/books");
-const categoryRouter = require("./routes/category");
-const likeRouter = require("./routes/likes");
-const cartRouter = require("./routes/carts");
-const orderRouter = require("./routes/orders");
+app.listen(process.env.PORT);
 
 app.use("/users", userRouter);
 app.use("/books", bookRouter);

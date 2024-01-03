@@ -1,11 +1,11 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const {
+import {
   join,
   login,
   PasswordResetrequest,
   passwordReset,
-} = require("../controller/UserController");
+} from "../controller/UserController";
 
 router.use(express.json());
 
@@ -18,4 +18,4 @@ router.post("/reset", PasswordResetrequest);
 // 비밀번호 초기화
 router.put("/reset", passwordReset);
 
-module.exports = router;
+export default router;

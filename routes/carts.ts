@@ -1,4 +1,4 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
 
 router.use(express.json());
@@ -20,4 +20,4 @@ router.delete(`/:id`, (req, res) => {
 //   res.json("상품 목록 조회");
 // });
 
-module.exports = router;
+export default router;
