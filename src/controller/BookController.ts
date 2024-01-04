@@ -1,27 +1,30 @@
 import conn from "@database/mariadb";
 import { StatusCodes } from "http-status-codes";
 import { Request, Response } from "express";
-import { BookDTO } from "@interfaces/books/book";
+import { BookDTO, QueryParamsDTO } from "@interfaces/books/book";
 import { RowDataPacket } from "mysql2";
 
 const allBooks = (req: Request, res: Response): void => {
-  let { category_id, news }: { category_id?: string; news?: string } =
-    req.query as { category_id?: string; news?: string };
+  let { category_id, news, limit, currentPage } = req.query as QueryParamsDTO;
+
+  let offset = Number(limit) * (Number(currentPage) - 1);
 
   let sql = "SELECT * FROM books";
-  let values = [];
+  let values: Array<number | string> = [];
   if (category_id && news) {
     sql +=
       " WHERE category_id = ? AND pub_date BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) AND NOW()";
-    values = [category_id, news];
+    values = [category_id];
   } else if (category_id) {
     sql += " WHERE category_id = ?";
     values = [category_id];
   } else if (news) {
     sql +=
       " WHERE pub_date BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) AND NOW()";
-    values = [news];
   }
+
+  sql += " LIMIT ? OFFSET ?";
+  values.push(Number(limit), offset);
 
   conn.query(sql, values, (err: Error, results: RowDataPacket[]) => {
     if (err) {

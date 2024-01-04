@@ -15,3 +15,9 @@ export interface BookDTO {
   liked: boolean;
   pub_date: Date;
 }
+export interface QueryParamsDTO {
+  category_id?: string;
+  news?: string;
+  limit?: string;
+  currentPage?: string;
+}
