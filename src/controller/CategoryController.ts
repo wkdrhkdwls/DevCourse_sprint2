@@ -1,7 +1,7 @@
-import conn from "../mariadb";
+import conn from "@database/mariadb";
 import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import { CategoryDTO } from "../types/categories/category";
+import { CategoryDTO } from "@interfaces/categories/category";
 import { RowDataPacket } from "mysql2";
 
 const allCategory = (req: Request, res: Response): void => {

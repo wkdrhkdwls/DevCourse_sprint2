@@ -10,6 +10,13 @@
     "experimentalDecorators": true,
     "sourceMap": true,
     "typeRoots": ["./node_modules/@types"],
-    "types": ["node", "express"]
+    "types": ["node", "express"],
+    "baseUrl": ".",
+    "paths": {
+      "@controller/*": ["src/controller/*"],
+      "@routes/*": ["src/routes/*"],
+      "@interfaces/*": ["src/interfaces/*"],
+      "@database/*": ["src/database/*"]
+    }
   }
 }

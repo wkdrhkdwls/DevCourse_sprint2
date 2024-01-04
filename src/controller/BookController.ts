@@ -1,7 +1,7 @@
-import conn from "../mariadb";
+import conn from "@database/mariadb";
 import { StatusCodes } from "http-status-codes";
 import { Request, Response } from "express";
-import { BookDTO } from "../types/books/book";
+import { BookDTO } from "@interfaces/books/book";
 import { RowDataPacket } from "mysql2";
 
 const allBooks = (req: Request, res: Response): void => {

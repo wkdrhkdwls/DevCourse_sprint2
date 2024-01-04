@@ -1,11 +1,11 @@
 import dotenv from "dotenv";
 import express, { Application } from "express";
-import userRouter from "./routes/users";
-import bookRouter from "./routes/books";
-import categoryRouter from "./routes/category";
-import likeRouter from "./routes/likes";
-import cartRouter from "./routes/carts";
-import orderRouter from "./routes/orders";
+import userRouter from "@routes/users";
+import bookRouter from "@routes/books";
+import categoryRouter from "@routes/category";
+import likeRouter from "@routes/likes";
+import cartRouter from "@routes/carts";
+import orderRouter from "@routes/orders";
 
 dotenv.config();
 

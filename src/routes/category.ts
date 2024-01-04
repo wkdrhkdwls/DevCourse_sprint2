@@ -1,5 +1,5 @@
 import express from "express";
-import { allCategory } from "../controller/CategoryController";
+import { allCategory } from "src/controller/CategoryController";
 
 const router = express.Router();
 router.use(express.json());

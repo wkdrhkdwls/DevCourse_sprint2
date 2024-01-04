@@ -5,7 +5,7 @@ import {
   login,
   PasswordResetrequest,
   passwordReset,
-} from "../controller/UserController";
+} from "src/controller/UserController";
 
 router.use(express.json());
 

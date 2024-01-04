@@ -1,11 +1,11 @@
-import conn from "../mariadb";
+import conn from "@database/mariadb";
 import { StatusCodes } from "http-status-codes";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import dotenv from "dotenv";
 import { Request, Response } from "express";
 import { ResultSetHeader, RowDataPacket } from "mysql2";
-import { UserDTO } from "../types/users/user";
+import { UserDTO } from "@interfaces/users/user";
 
 dotenv.config();
 
