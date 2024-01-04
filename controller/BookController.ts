@@ -5,34 +5,37 @@ import { BookDTO } from "../types/books/book";
 import { RowDataPacket } from "mysql2";
 
 const allBooks = (req: Request, res: Response): void => {
-  let category_id: string | undefined = req.query.category_id as string;
+  let { category_id, news }: { category_id?: string; news?: string } =
+    req.query as { category_id?: string; news?: string };
 
-  if (category_id) {
-    let sql = "SELECT * FROM books WHERE category_id = ?";
-    conn.query(sql, category_id, (err: Error, results: RowDataPacket[]) => {
-      if (err) {
-        console.log(err);
-        return res.status(StatusCodes.BAD_REQUEST).end(); // BAD REQUEST
-      }
-      const books: BookDTO[] = results as BookDTO[];
-
-      if (books.length) {
-        return res.status(StatusCodes.OK).json(books);
-      } else {
-        return res.status(StatusCodes.NOT_FOUND).end();
-      } // NOT FOUND
-    });
-  } else {
-    let sql = "SELECT * FROM books";
-    conn.query(sql, (err: Error, results: RowDataPacket[]) => {
-      if (err) {
-        console.log(err);
-        return res.status(StatusCodes.BAD_REQUEST).end(); // BAD REQUEST
-      }
-      const books: BookDTO[] = results as BookDTO[];
-      return res.status(StatusCodes.OK).json(books);
-    });
+  let sql = "SELECT * FROM books";
+  let values = [];
+  if (category_id && news) {
+    sql +=
+      " WHERE category_id = ? AND pub_date BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) AND NOW()";
+    values = [category_id, news];
+  } else if (category_id) {
+    sql += " WHERE category_id = ?";
+    values = [category_id];
+  } else if (news) {
+    sql +=
+      " WHERE pub_date BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) AND NOW()";
+    values = [news];
   }
+
+  conn.query(sql, values, (err: Error, results: RowDataPacket[]) => {
+    if (err) {
+      console.log(err);
+      return res.status(StatusCodes.BAD_REQUEST).end(); // BAD REQUEST
+    }
+    const books: BookDTO[] = results as BookDTO[];
+
+    if (books.length) {
+      return res.status(StatusCodes.OK).json(books);
+    } else {
+      return res.status(StatusCodes.NOT_FOUND).end();
+    } // NOT FOUND
+  });
 };
 
 const bookDetail = (req: Request, res: Response) => {
