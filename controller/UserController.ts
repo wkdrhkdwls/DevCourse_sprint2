@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import dotenv from "dotenv";
 import { Request, Response } from "express";
-import { ResultSetHeader } from "mysql2";
+import { ResultSetHeader, RowDataPacket } from "mysql2";
 import { UserDTO } from "../types/users/user";
 
 dotenv.config();
@@ -21,7 +21,7 @@ const join = (req: Request, res: Response): void => {
 
   let values = [email, hashPassword, salt];
 
-  conn.query(sql, values, (err: Error, results: UserDTO[]) => {
+  conn.query(sql, values, (err: Error, results: RowDataPacket[]) => {
     if (err) {
       console.log(err);
       return res.status(StatusCodes.BAD_REQUEST).end();
@@ -35,13 +35,13 @@ const login = (req: Request, res: Response): void => {
   const { email, password } = req.body;
 
   let sql = `SELECT * FROM users WHERE email = ?`;
-  conn.query(sql, email, (err: Error, results: UserDTO[]) => {
+  conn.query(sql, email, (err: Error, results: RowDataPacket[]) => {
     if (err) {
       console.log(err);
       return res.status(StatusCodes.BAD_REQUEST).end();
     }
 
-    const loginUser = results[0];
+    const loginUser: UserDTO = results[0] as UserDTO;
 
     const hashPassword = crypto
       .pbkdf2Sync(password, loginUser.salt, 10000, 10, "sha512")
@@ -76,13 +76,13 @@ const PasswordResetrequest = (req: Request, res: Response): void => {
   const { email } = req.body;
 
   let sql = `SELECT * FROM users WHERE email = ?`;
-  conn.query(sql, email, (err: Error, results: UserDTO[]) => {
+  conn.query(sql, email, (err: Error, results: RowDataPacket[]) => {
     if (err) {
       console.log(err);
       return res.status(StatusCodes.BAD_REQUEST).end();
     }
 
-    const user = results[0];
+    const user: UserDTO = results[0] as UserDTO;
     if (user) {
       return res.status(StatusCodes.OK).json({
         email: email,

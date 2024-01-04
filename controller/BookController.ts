@@ -2,13 +2,14 @@ import conn from "../mariadb";
 import { StatusCodes } from "http-status-codes";
 import { Request, Response } from "express";
 import { BookDTO } from "../types/books/book";
+import { RowDataPacket } from "mysql2";
 
 const allBooks = (req: Request, res: Response): void => {
   let category_id: string | undefined = req.query.category_id as string;
 
   if (category_id) {
     let sql = "SELECT * FROM books WHERE category_id = ?";
-    conn.query(sql, category_id, (err: Error, results: BookDTO[]) => {
+    conn.query(sql, category_id, (err: Error, results: RowDataPacket[]) => {
       if (err) {
         console.log(err);
         return res.status(StatusCodes.BAD_REQUEST).end(); // BAD REQUEST
@@ -22,7 +23,7 @@ const allBooks = (req: Request, res: Response): void => {
     });
   } else {
     let sql = "SELECT * FROM books";
-    conn.query(sql, (err: Error, results: BookDTO[]) => {
+    conn.query(sql, (err: Error, results: RowDataPacket[]) => {
       if (err) {
         console.log(err);
         return res.status(StatusCodes.BAD_REQUEST).end(); // BAD REQUEST
@@ -32,16 +33,19 @@ const allBooks = (req: Request, res: Response): void => {
     });
   }
 };
+
 const bookDetail = (req: Request, res: Response) => {
   let { id } = req.params;
-  let sql = "SELECT * FROM books WHERE id = ?";
-  conn.query(sql, id, (err: Error, results: BookDTO[]) => {
+
+  let sql =
+    "SELECT * FROM books LEFT JOIN category ON books.category_id = category.id WHERE books.id = ?;";
+  conn.query(sql, id, (err: Error, results: RowDataPacket[]) => {
     if (err) {
       console.log(err);
       return res.status(StatusCodes.BAD_REQUEST).end(); // BAD REQUEST
     }
-
-    if (results[0]) {
+    const book: BookDTO = results[0] as BookDTO;
+    if (book) {
       return res.status(StatusCodes.OK).json(results);
     } else {
       return res.status(StatusCodes.NOT_FOUND).end();
