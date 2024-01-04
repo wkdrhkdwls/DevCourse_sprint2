@@ -21,13 +21,19 @@ const join = (req: Request, res: Response): void => {
 
   let values = [email, hashPassword, salt];
 
-  conn.query(sql, values, (err: Error, results: RowDataPacket[]) => {
+  conn.query(sql, values, (err: Error, results: ResultSetHeader) => {
     if (err) {
       console.log(err);
       return res.status(StatusCodes.BAD_REQUEST).end();
     }
 
-    res.status(StatusCodes.CREATED).json(results);
+    const user: UserDTO = {
+      id: results.insertId,
+      email,
+      password: hashPassword,
+      salt,
+    };
+    res.status(StatusCodes.CREATED).json(user);
   });
 };
 
@@ -84,9 +90,7 @@ const PasswordResetrequest = (req: Request, res: Response): void => {
 
     const user: UserDTO = results[0] as UserDTO;
     if (user) {
-      return res.status(StatusCodes.OK).json({
-        email: email,
-      });
+      return res.status(StatusCodes.OK).json(user);
     } else {
       return res.status(StatusCodes.UNAUTHORIZED).end();
     }
@@ -114,7 +118,13 @@ const passwordReset = (req: Request, res: Response): void => {
     if (results.affectedRows == 0) {
       return res.status(StatusCodes.BAD_REQUEST).end();
     } else {
-      return res.status(StatusCodes.OK).json(results);
+      const user: UserDTO = {
+        id: results.insertId,
+        email,
+        password: hashPassword,
+        salt,
+      };
+      return res.status(StatusCodes.OK).json(user);
     }
   });
 };

@@ -14,9 +14,10 @@ const allBooks = (req: Request, res: Response): void => {
         console.log(err);
         return res.status(StatusCodes.BAD_REQUEST).end(); // BAD REQUEST
       }
+      const books: BookDTO[] = results as BookDTO[];
 
-      if (results.length) {
-        return res.status(StatusCodes.OK).json(results);
+      if (books.length) {
+        return res.status(StatusCodes.OK).json(books);
       } else {
         return res.status(StatusCodes.NOT_FOUND).end();
       } // NOT FOUND
@@ -28,8 +29,8 @@ const allBooks = (req: Request, res: Response): void => {
         console.log(err);
         return res.status(StatusCodes.BAD_REQUEST).end(); // BAD REQUEST
       }
-
-      return res.status(StatusCodes.OK).json(results);
+      const books: BookDTO[] = results as BookDTO[];
+      return res.status(StatusCodes.OK).json(books);
     });
   }
 };
@@ -46,7 +47,7 @@ const bookDetail = (req: Request, res: Response) => {
     }
     const book: BookDTO = results[0] as BookDTO;
     if (book) {
-      return res.status(StatusCodes.OK).json(results);
+      return res.status(StatusCodes.OK).json(book);
     } else {
       return res.status(StatusCodes.NOT_FOUND).end();
     } // NOT FOUND
