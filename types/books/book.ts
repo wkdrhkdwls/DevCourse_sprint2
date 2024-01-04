@@ -2,7 +2,7 @@ export interface BookDTO {
   id: number;
   title: string;
   img: number;
-  category: string;
+  category_id: number;
   form: string;
   isbn: string;
   summary: string;
