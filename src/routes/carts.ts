@@ -19,5 +19,6 @@ router.delete(`/:id`, removeCartItem);
 // router.get(`/carts/:id`, (req, res) => {
 //   res.json("상품 목록 조회");
 // });
+// router.get("/carts"); // 장바구니에서 선택한(장바구니 도서 id) 아이템 목록 조회 ( = 선택한 장바구니 상품 목록 조회)
 
 export default router;
