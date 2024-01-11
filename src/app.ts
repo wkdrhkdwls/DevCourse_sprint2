@@ -13,9 +13,9 @@ const app: Application = express();
 
 app.listen(process.env.PORT);
 
-app.use("/users", userRouter);
-app.use("/books", bookRouter);
-app.use("/category", categoryRouter);
-app.use("/likes", likeRouter);
-app.use("/carts", cartRouter);
+// app.use("/users", userRouter);
+// app.use("/books", bookRouter);
+// app.use("/category", categoryRouter);
+// app.use("/likes", likeRouter);
+// app.use("/carts", cartRouter);
 app.use("/orders", orderRouter);
