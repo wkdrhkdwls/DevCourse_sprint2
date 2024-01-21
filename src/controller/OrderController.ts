@@ -38,7 +38,7 @@ const order = async (req: Request, res: Response): Promise<void> => {
   items.forEach((item: any) => {
     values.push([order_id, item.book_id, item.quantity]);
   });
-  results = await conn.query(sql, [values]);
+  results[0] = await conn.query(sql, [values]);
 
   let result = await deleteCartItems(conn);
 
