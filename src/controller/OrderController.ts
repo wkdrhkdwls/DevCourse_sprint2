@@ -37,11 +37,20 @@ const order = async (req: Request, res: Response): Promise<void> => {
 
   items.forEach((item: any) => {
     values.push([order_id, item.book_id, item.quantity]);
-    console.log(values);
   });
-  [results] = await conn.query(sql, [values]);
+  results = await conn.query(sql, [values]);
 
-  res.status(StatusCodes.OK).json(results);
+  let result = await deleteCartItems(conn);
+
+  res.status(StatusCodes.OK).json(result);
+};
+
+const deleteCartItems = async (conn) => {
+  let sql = `DELETE FROM cartitems WHERE id IN (?)`;
+  let values = [1, 2, 3];
+
+  let result = await conn.query(sql, [values]);
+  return result;
 };
 
 const getOrders = (req: Request, res: Response): void => {};
