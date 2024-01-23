@@ -31,32 +31,67 @@ const order = async (req: Request, res: Response): Promise<void> => {
   //@ts-ignore
   let order_id = results.insertId;
 
-  //SELECT book_id, quantity FROM cartitems WHERE IN [1,2,3];
+  //items를 가지고, 장바구니에서 book_id, quantity 조회
+  sql = `SELECT book_id, quantity FROM cartitems WHERE id IN (?)`;
+  let [orderItems, fields] = await conn.query(sql, [items]);
 
   // orderedBook 테이블 삽입
   sql = `INSERT INTO orderedBook (order_id, book_id, quantity) VALUES ?`;
 
   values = [];
-  items.forEach((item: any) => {
-    values.push([order_id, item.book_id, item.quantity]);
-  });
+  if (orderItems instanceof Array) {
+    orderItems.forEach((item: any) => {
+      values.push([order_id, item.book_id, item.quantity]);
+    });
+  }
+
   results[0] = await conn.query(sql, [values]);
 
-  let result = await deleteCartItems(conn);
+  let result = await deleteCartItems(conn, items);
 
   res.status(StatusCodes.OK).json(result);
 };
 
-const deleteCartItems = async (conn) => {
+const deleteCartItems = async (conn, items) => {
   let sql = `DELETE FROM cartitems WHERE id IN (?)`;
-  let values = [1, 2, 3];
 
-  let result = await conn.query(sql, [values]);
+  let result = await conn.query(sql, [items]);
   return result;
 };
 
-const getOrders = (req: Request, res: Response): void => {};
+const getOrders = async (req: Request, res: Response): Promise<void> => {
+  const conn = await mariadb.createConnection({
+    host: process.env.DB_Host,
+    user: process.env.DB_User,
+    password: process.env.DB_Password,
+    database: process.env.DB_Database,
+    dateStrings: true,
+  });
 
-const getOrderDetail = (req: Request, res: Response): void => {};
+  let sql = `SELECT orders.id, created_at, address, receiver, contact,
+              book_title, total_quantity, total_price              
+              FROM orders LEFT JOIN delivery
+              ON orders.delivery_id = delivery.id`;
+  let [rows, fields] = await conn.query(sql);
+  res.status(StatusCodes.OK).json(rows);
+};
+
+const getOrderDetail = async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const conn = await mariadb.createConnection({
+    host: process.env.DB_Host,
+    user: process.env.DB_User,
+    password: process.env.DB_Password,
+    database: process.env.DB_Database,
+    dateStrings: true,
+  });
+
+  let sql = `SELECT book_id, title, author, price, quantity        
+              FROM orderedBook LEFT JOIN books
+              ON orderedBook.book_id = books.id
+              WHERE order_id = ?`;
+  let [rows, fields] = await conn.query(sql, [id]);
+  res.status(StatusCodes.OK).json(rows);
+};
 
 export { order, getOrders, getOrderDetail };
