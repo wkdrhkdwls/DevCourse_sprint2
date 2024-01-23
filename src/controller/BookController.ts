@@ -1,11 +1,19 @@
-import conn from "@database/mariadb";
-import { StatusCodes } from "http-status-codes";
+import mariadb from "mysql2/promise";
 import { Request, Response } from "express";
-import { BookDTO, QueryParamsDTO } from "@interfaces/books/book";
-import { RowDataPacket } from "mysql2";
+import { config } from "dotenv";
+import { StatusCodes } from "http-status-codes";
 
-const allBooks = (req: Request, res: Response): void => {
-  let { category_id, news, limit, currentPage } = req.query as QueryParamsDTO;
+config();
+const allBooks = async (req: Request, res: Response): Promise<void> => {
+  const conn = await mariadb.createConnection({
+    host: process.env.DB_Host,
+    user: process.env.DB_User,
+    password: process.env.DB_Password,
+    database: process.env.DB_Database,
+    dateStrings: true,
+  });
+
+  let { category_id, news, limit, currentPage } = req.query;
 
   let offset = Number(limit) * (Number(currentPage) - 1);
 
@@ -15,10 +23,10 @@ const allBooks = (req: Request, res: Response): void => {
   if (category_id && news) {
     sql +=
       " WHERE category_id = ? AND pub_date BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) AND NOW()";
-    values = [category_id];
+    values = [Number(category_id)]; // Convert category_id to number
   } else if (category_id) {
     sql += " WHERE category_id = ?";
-    values = [category_id];
+    values = [Number(category_id)]; // Convert category_id to number
   } else if (news) {
     sql +=
       " WHERE pub_date BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) AND NOW()";
@@ -27,22 +35,18 @@ const allBooks = (req: Request, res: Response): void => {
   sql += " LIMIT ? OFFSET ?";
   values.push(Number(limit), offset);
 
-  conn.query(sql, values, (err: Error, results: RowDataPacket[]) => {
-    if (err) {
-      console.log(err);
-      return res.status(StatusCodes.BAD_REQUEST).end(); // BAD REQUEST
-    }
-    const books: BookDTO[] = results as BookDTO[];
-
-    if (books.length) {
-      return res.status(StatusCodes.OK).json(books);
-    } else {
-      return res.status(StatusCodes.NOT_FOUND).end();
-    } // NOT FOUND
-  });
+  let [results] = await conn.execute(sql, values);
+  res.status(StatusCodes.OK).json(results);
 };
 
-const bookDetail = (req: Request, res: Response) => {
+const bookDetail = async (req: Request, res: Response): Promise<void> => {
+  const conn = await mariadb.createConnection({
+    host: process.env.DB_Host,
+    user: process.env.DB_User,
+    password: process.env.DB_Password,
+    database: process.env.DB_Database,
+    dateStrings: true,
+  });
   let { user_id } = req.body;
   let book_id = req.params.id;
 
@@ -50,18 +54,8 @@ const bookDetail = (req: Request, res: Response) => {
     "SELECT *, (SELECT COUNT(*) FROM likes WHERE liked_book_id = books.id) AS likes, (SELECT EXISTS (SELECT * FROM likes WHERE user_id = ? AND liked_book_id = ?)) AS liked FROM books LEFT JOIN category ON books.category_id = category.id WHERE books.id = ?;";
 
   let values = [user_id, book_id, book_id];
-  conn.query(sql, values, (err: Error, results: RowDataPacket[]) => {
-    if (err) {
-      console.log(err);
-      return res.status(StatusCodes.BAD_REQUEST).end(); // BAD REQUEST
-    }
-    const book: BookDTO = results[0] as BookDTO;
-    if (book) {
-      return res.status(StatusCodes.OK).json(book);
-    } else {
-      return res.status(StatusCodes.NOT_FOUND).end();
-    } // NOT FOUND
-  });
+  let [results] = await conn.execute(sql, values);
+  res.status(StatusCodes.OK).json(results);
 };
 
 export { allBooks, bookDetail };

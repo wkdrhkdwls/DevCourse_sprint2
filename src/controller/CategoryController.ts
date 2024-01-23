@@ -1,26 +1,20 @@
-import conn from "@database/mariadb";
+import mariadb from "mysql2/promise";
 import { Request, Response } from "express";
+import { config } from "dotenv";
 import { StatusCodes } from "http-status-codes";
-import { CategoryDTO } from "@interfaces/categories/category";
-import { RowDataPacket } from "mysql2";
 
-const allCategory = (req: Request, res: Response): void => {
-  let sql = "SELECT * FROM category";
-  conn.query<RowDataPacket[]>(sql, (err, results) => {
-    if (err) {
-      console.error(err);
-      res.status(StatusCodes.BAD_REQUEST).end();
-      return;
-    }
-    // RowDataPacket[]을 CategoryDTO[]로 변환
-    const categories: CategoryDTO[] = results.map((row: RowDataPacket) => {
-      return {
-        id: row.id,
-        category_name: row.category_name,
-      } as CategoryDTO;
-    });
-    res.status(StatusCodes.OK).json(categories);
+config();
+const allCategory = async (req: Request, res: Response): Promise<void> => {
+  const conn = await mariadb.createConnection({
+    host: process.env.DB_Host,
+    user: process.env.DB_User,
+    password: process.env.DB_Password,
+    database: process.env.DB_Database,
+    dateStrings: true,
   });
+  let sql = "SELECT * FROM category";
+  let [results] = await conn.execute(sql);
+  res.status(StatusCodes.OK).json(results);
 };
 
 export { allCategory };

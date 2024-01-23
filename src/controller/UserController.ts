@@ -1,15 +1,20 @@
-import conn from "@database/mariadb";
+import mariadb from "mysql2/promise";
+import { Request, Response } from "express";
+import { config } from "dotenv";
 import { StatusCodes } from "http-status-codes";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import dotenv from "dotenv";
-import { Request, Response } from "express";
-import { ResultSetHeader, RowDataPacket } from "mysql2";
-import { UserDTO } from "@interfaces/users/user";
 
-dotenv.config();
+config();
 
-const join = (req: Request, res: Response): void => {
+const join = async (req: Request, res: Response): Promise<void> => {
+  const conn = await mariadb.createConnection({
+    host: process.env.DB_Host,
+    user: process.env.DB_User,
+    password: process.env.DB_Password,
+    database: process.env.DB_Database,
+    dateStrings: true,
+  });
   const { email, password } = req.body;
 
   let sql = `INSERT INTO users (email, password, salt) VALUES (?,?,?)`;
@@ -21,33 +26,25 @@ const join = (req: Request, res: Response): void => {
 
   let values = [email, hashPassword, salt];
 
-  conn.query(sql, values, (err: Error, results: ResultSetHeader) => {
-    if (err) {
-      console.log(err);
-      return res.status(StatusCodes.BAD_REQUEST).end();
-    }
-
-    const user: UserDTO = {
-      id: results.insertId,
-      email,
-      password: hashPassword,
-      salt,
-    };
-    res.status(StatusCodes.CREATED).json(user);
-  });
+  let [results] = await conn.execute(sql, values);
+  res.status(StatusCodes.OK).json(results);
 };
 
-const login = (req: Request, res: Response): void => {
+const login = async (req: Request, res: Response): Promise<void> => {
+  const conn = await mariadb.createConnection({
+    host: process.env.DB_Host,
+    user: process.env.DB_User,
+    password: process.env.DB_Password,
+    database: process.env.DB_Database,
+    dateStrings: true,
+  });
   const { email, password } = req.body;
 
   let sql = `SELECT * FROM users WHERE email = ?`;
-  conn.query(sql, email, (err: Error, results: RowDataPacket[]) => {
-    if (err) {
-      console.log(err);
-      return res.status(StatusCodes.BAD_REQUEST).end();
-    }
 
-    const loginUser: UserDTO = results[0] as UserDTO;
+  try {
+    let [results] = await conn.execute(sql, [email]);
+    const loginUser = results[0];
 
     const hashPassword = crypto
       .pbkdf2Sync(password, loginUser.salt, 10000, 10, "sha512")
@@ -71,33 +68,53 @@ const login = (req: Request, res: Response): void => {
 
       console.log(token);
 
-      return res.status(StatusCodes.OK).json(token);
+      res.status(StatusCodes.OK).json(token);
     } else {
-      return res.status(StatusCodes.UNAUTHORIZED).end();
+      res.status(StatusCodes.UNAUTHORIZED).end();
     }
-  });
+  } catch (err) {
+    console.log(err);
+    res.status(StatusCodes.BAD_REQUEST).end();
+  }
 };
 
-const PasswordResetrequest = (req: Request, res: Response): void => {
+const PasswordResetrequest = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const conn = await mariadb.createConnection({
+    host: process.env.DB_Host,
+    user: process.env.DB_User,
+    password: process.env.DB_Password,
+    database: process.env.DB_Database,
+    dateStrings: true,
+  });
   const { email } = req.body;
 
   let sql = `SELECT * FROM users WHERE email = ?`;
-  conn.query(sql, email, (err: Error, results: RowDataPacket[]) => {
-    if (err) {
-      console.log(err);
-      return res.status(StatusCodes.BAD_REQUEST).end();
-    }
 
-    const user: UserDTO = results[0] as UserDTO;
+  try {
+    let [results] = await conn.execute(sql, [email]);
+    const user = results[0];
     if (user) {
-      return res.status(StatusCodes.OK).json(user);
+      res.status(StatusCodes.OK).json(user);
     } else {
-      return res.status(StatusCodes.UNAUTHORIZED).end();
+      res.status(StatusCodes.UNAUTHORIZED).end();
     }
-  });
+  } catch (err) {
+    console.log(err);
+    res.status(StatusCodes.BAD_REQUEST).end();
+  }
 };
 
-const passwordReset = (req: Request, res: Response): void => {
+const passwordReset = async (req: Request, res: Response): Promise<void> => {
+  const conn = await mariadb.createConnection({
+    host: process.env.DB_Host,
+    user: process.env.DB_User,
+    password: process.env.DB_Password,
+    database: process.env.DB_Database,
+    dateStrings: true,
+  });
   const { email, password } = req.body;
 
   let sql = `UPDATE users SET password=?, salt=? WHERE email=?`;
@@ -109,24 +126,25 @@ const passwordReset = (req: Request, res: Response): void => {
 
   let values = [hashPassword, salt, email];
 
-  conn.query(sql, values, (err: Error, results: ResultSetHeader) => {
-    if (err) {
-      console.log(err);
-      return res.status(StatusCodes.BAD_REQUEST).end();
-    }
-
+  try {
+    let [results] = await conn.execute(sql, values);
+    //@ts-ignore
     if (results.affectedRows == 0) {
-      return res.status(StatusCodes.BAD_REQUEST).end();
+      res.status(StatusCodes.BAD_REQUEST).end();
     } else {
-      const user: UserDTO = {
+      const user = {
+        //@ts-ignore
         id: results.insertId,
         email,
         password: hashPassword,
         salt,
       };
-      return res.status(StatusCodes.OK).json(user);
+      res.status(StatusCodes.OK).json(user);
     }
-  });
+  } catch (err) {
+    console.log(err);
+    res.status(StatusCodes.BAD_REQUEST).end();
+  }
 };
 
 export { join, login, PasswordResetrequest, passwordReset };

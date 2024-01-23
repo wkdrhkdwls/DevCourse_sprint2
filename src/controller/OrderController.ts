@@ -31,10 +31,12 @@ const order = async (req: Request, res: Response): Promise<void> => {
   //@ts-ignore
   let order_id = results.insertId;
 
+  //SELECT book_id, quantity FROM cartitems WHERE IN [1,2,3];
+
   // orderedBook 테이블 삽입
   sql = `INSERT INTO orderedBook (order_id, book_id, quantity) VALUES ?`;
-  values = [];
 
+  values = [];
   items.forEach((item: any) => {
     values.push([order_id, item.book_id, item.quantity]);
   });
