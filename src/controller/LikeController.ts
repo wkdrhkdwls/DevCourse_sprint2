@@ -5,6 +5,12 @@ import { StatusCodes } from "http-status-codes";
 import jwt from "jsonwebtoken";
 
 config();
+
+function ensureAuthorization(req: Request) {
+  let receivedJwt = req.headers["authorization"];
+  let decodedJwt = jwt.verify(receivedJwt, process.env.PRIVATE_KEY);
+  return decodedJwt;
+}
 const addLike = async (req: Request, res: Response): Promise<void> => {
   const conn = await mariadb.createConnection({
     host: process.env.DB_Host,
@@ -38,9 +44,4 @@ const removeLike = async (req: Request, res: Response): Promise<void> => {
   res.status(StatusCodes.OK).json(results);
 };
 
-function ensureAuthorization(req: Request) {
-  let receivedJwt = req.headers["authorization"];
-  let decodedJwt = jwt.verify(receivedJwt, process.env.PRIVATE_KEY);
-  return decodedJwt;
-}
 export { addLike, removeLike };
