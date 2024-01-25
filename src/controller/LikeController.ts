@@ -3,21 +3,10 @@ import { Request, Response } from "express";
 import { config } from "dotenv";
 import { StatusCodes } from "http-status-codes";
 import jwt from "jsonwebtoken";
+import ensureAuthorization from "src/auth";
 
 config();
 
-function ensureAuthorization(req: Request, res: Response) {
-  try {
-    let receivedJwt = req.headers["authorization"];
-    let decodedJwt = jwt.verify(receivedJwt, process.env.PRIVATE_KEY);
-    return decodedJwt;
-  } catch (err) {
-    console.log(err.name);
-    console.log(err.message);
-
-    return err;
-  }
-}
 const addLike = async (req: Request, res: Response): Promise<void> => {
   const conn = await mariadb.createConnection({
     host: process.env.DB_Host,
