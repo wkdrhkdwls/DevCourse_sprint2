@@ -6,10 +6,17 @@ import jwt from "jsonwebtoken";
 
 config();
 
-function ensureAuthorization(req: Request) {
-  let receivedJwt = req.headers["authorization"];
-  let decodedJwt = jwt.verify(receivedJwt, process.env.PRIVATE_KEY);
-  return decodedJwt;
+function ensureAuthorization(req: Request, res: Response) {
+  try {
+    let receivedJwt = req.headers["authorization"];
+    let decodedJwt = jwt.verify(receivedJwt, process.env.PRIVATE_KEY);
+    return decodedJwt;
+  } catch (err) {
+    console.log(err.name);
+    console.log(err.message);
+
+    return err;
+  }
 }
 const addLike = async (req: Request, res: Response): Promise<void> => {
   const conn = await mariadb.createConnection({
@@ -20,11 +27,18 @@ const addLike = async (req: Request, res: Response): Promise<void> => {
     dateStrings: true,
   });
 
-  let decodedJwt: any = ensureAuthorization(req);
-  let sql = "INSERT INTO likes (user_id, liked_book_id) VALUES (?, ?)";
-  let values = [decodedJwt.id, req.params.id];
-  let [results] = await conn.execute(sql, values);
-  res.status(StatusCodes.OK).json(results);
+  let authorization = ensureAuthorization(req, res);
+
+  if (authorization instanceof jwt.TokenExpiredError) {
+    res.status(StatusCodes.UNAUTHORIZED).json({ message: "Token expired" });
+  } else if (authorization instanceof jwt.JsonWebTokenError) {
+    res.status(StatusCodes.BAD_REQUEST).json({ message: "잘못된 토큰입니다." });
+  } else {
+    let sql = "INSERT INTO likes (user_id, liked_book_id) VALUES (?, ?)";
+    let values = [authorization.id, req.params.id];
+    let [results] = await conn.execute(sql, values);
+    res.status(StatusCodes.OK).json(results);
+  }
 };
 
 const removeLike = async (req: Request, res: Response): Promise<void> => {
@@ -36,12 +50,18 @@ const removeLike = async (req: Request, res: Response): Promise<void> => {
     dateStrings: true,
   });
 
-  let decodedJwt: any = ensureAuthorization(req);
+  let authorization = ensureAuthorization(req, res);
 
-  let sql = "DELETE FROM likes WHERE user_id = ? AND liked_book_id = ?";
-  let values = [decodedJwt.id, req.params.id];
-  let [results] = await conn.execute(sql, values);
-  res.status(StatusCodes.OK).json(results);
+  if (authorization instanceof jwt.TokenExpiredError) {
+    res.status(StatusCodes.UNAUTHORIZED).json({ message: "Token expired" });
+  } else if (authorization instanceof jwt.JsonWebTokenError) {
+    res.status(StatusCodes.BAD_REQUEST).json({ message: "잘못된 토큰입니다." });
+  } else {
+    let sql = "DELETE FROM likes WHERE user_id = ? AND liked_book_id = ?";
+    let values = [authorization.id, req.params.id];
+    let [results] = await conn.execute(sql, values);
+    res.status(StatusCodes.OK).json(results);
+  }
 };
 
 export { addLike, removeLike };

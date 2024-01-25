@@ -2,14 +2,21 @@ import mariadb from "mysql2/promise";
 import { Request, Response } from "express";
 import { config } from "dotenv";
 import { StatusCodes } from "http-status-codes";
-import jwt from "jsonwebtoken";
+import { TokenExpiredError, jwt } from "jsonwebtoken";
 
 config();
 
-function ensureAuthorization(req: Request) {
-  let receivedJwt = req.headers["authorization"];
-  let decodedJwt = jwt.verify(receivedJwt, process.env.PRIVATE_KEY);
-  return decodedJwt;
+function ensureAuthorization(req: Request, res: Response) {
+  try {
+    let receivedJwt = req.headers["authorization"];
+    let decodedJwt = jwt.verify(receivedJwt, process.env.PRIVATE_KEY);
+    return decodedJwt;
+  } catch (err) {
+    console.log(err.name);
+    console.log(err.message);
+
+    return err;
+  }
 }
 
 const addToCart = async (req: Request, res: Response): Promise<void> => {
@@ -21,14 +28,20 @@ const addToCart = async (req: Request, res: Response): Promise<void> => {
     dateStrings: true,
   });
   const { book_id, quantity } = req.body;
-  let authorization = ensureAuthorization(req);
+  let authorization = ensureAuthorization(req, res);
 
-  let sql =
-    "INSERT INTO cartitems (book_id, quantity, user_id) VALUES (?, ?, ?)";
-  let values = [book_id, quantity, authorization.id];
+  if (authorization instanceof jwt.TokenExpiredError) {
+    res.status(StatusCodes.UNAUTHORIZED).json({ message: "Token expired" });
+  } else if (authorization instanceof jwt.JsonWebTokenError) {
+    res.status(StatusCodes.BAD_REQUEST).json({ message: "잘못된 토큰입니다." });
+  } else {
+    let sql =
+      "INSERT INTO cartitems (book_id, quantity, user_id) VALUES (?, ?, ?)";
+    let values = [book_id, quantity, authorization.id];
 
-  let [results] = await conn.execute(sql, values);
-  res.status(StatusCodes.OK).json(results);
+    let [results] = await conn.execute(sql, values);
+    res.status(StatusCodes.OK).json(results);
+  }
 };
 
 const getCartItems = async (req: Request, res: Response): Promise<void> => {
@@ -41,12 +54,19 @@ const getCartItems = async (req: Request, res: Response): Promise<void> => {
   });
   const { selected } = req.body;
 
-  let authorization = ensureAuthorization(req);
-  let sql =
-    "SELECT cartitems.id, book_id, title, summary, quantity, price FROM cartitems LEFT JOIN books ON cartitems.book_id = books.id WHERE user_id=? AND cartitems.id IN (?)";
-  let values = [authorization.id, selected];
-  let [results] = await conn.execute(sql, values);
-  res.status(StatusCodes.OK).json(results);
+  let authorization = ensureAuthorization(req, res);
+
+  if (authorization instanceof jwt.TokenExpiredError) {
+    res.status(StatusCodes.UNAUTHORIZED).json({ message: "Token expired" });
+  } else if (authorization instanceof jwt.JsonWebTokenError) {
+    res.status(StatusCodes.BAD_REQUEST).json({ message: "잘못된 토큰입니다." });
+  } else {
+    let sql =
+      "SELECT cartitems.id, book_id, title, summary, quantity, price FROM cartitems LEFT JOIN books ON cartitems.book_id = books.id WHERE user_id=? AND cartitems.id IN (?)";
+    let values = [authorization.id, selected];
+    let [results] = await conn.execute(sql, values);
+    res.status(StatusCodes.OK).json(results);
+  }
 };
 
 const removeCartItem = async (req: Request, res: Response): Promise<void> => {
