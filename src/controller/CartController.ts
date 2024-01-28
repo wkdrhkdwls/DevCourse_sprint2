@@ -71,12 +71,19 @@ const removeCartItem = async (req: Request, res: Response): Promise<void> => {
     database: process.env.DB_Database,
     dateStrings: true,
   });
+  let authorization = ensureAuthorization(req, res);
 
-  let sql = "DELETE FROM carts WHERE id = ?";
-  let values = [req.params.id]; //cartItemId
+  if (authorization instanceof jwt.TokenExpiredError) {
+    res.status(StatusCodes.UNAUTHORIZED).json({ message: "Token expired" });
+  } else if (authorization instanceof jwt.JsonWebTokenError) {
+    res.status(StatusCodes.BAD_REQUEST).json({ message: "잘못된 토큰입니다." });
+  } else {
+    let sql = "DELETE FROM carts WHERE id = ?";
+    let values = [req.params.id]; //cartItemId
 
-  let [results] = await conn.execute(sql, values);
-  res.status(StatusCodes.OK).json(results);
+    let [results] = await conn.execute(sql, values);
+    res.status(StatusCodes.OK).json(results);
+  }
 };
 
 export { addToCart, getCartItems, removeCartItem };

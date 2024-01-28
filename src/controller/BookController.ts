@@ -15,20 +15,21 @@ const allBooks = async (req: Request, res: Response): Promise<void> => {
     dateStrings: true,
   });
 
+  let allBooksRes: { books?: any } = {};
   let { category_id, news, limit, currentPage } = req.query;
 
   let offset = Number(limit) * (Number(currentPage) - 1);
 
   let sql =
-    "SELECT *, (SELECT count(*) FROM likes WHERE books.id=liked_book_id) AS likes FROM books";
+    "SELECT SQL_CALC_FOUND_ROWS *, (SELECT count(*) FROM likes WHERE books.id=liked_book_id) AS likes FROM books";
   let values: Array<number | string> = [];
   if (category_id && news) {
     sql +=
       " WHERE category_id = ? AND pub_date BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) AND NOW()";
-    values = [Number(category_id)]; // Convert category_id to number
+    values = [Number(category_id)];
   } else if (category_id) {
     sql += " WHERE category_id = ?";
-    values = [Number(category_id)]; // Convert category_id to number
+    values = [Number(category_id)];
   } else if (news) {
     sql +=
       " WHERE pub_date BETWEEN DATE_SUB(NOW(), INTERVAL 1 MONTH) AND NOW()";
@@ -37,8 +38,33 @@ const allBooks = async (req: Request, res: Response): Promise<void> => {
   sql += " LIMIT ? OFFSET ?";
   values.push(Number(limit), offset);
 
-  let [results] = await conn.execute(sql, values);
-  res.status(StatusCodes.OK).json(results);
+  let result1;
+  try {
+    [result1] = await conn.query(sql, values);
+    allBooksRes.books = result1;
+  } catch (err) {
+    console.log(err);
+    res.status(StatusCodes.BAD_REQUEST).end();
+  }
+
+  sql = "SELECT found_rows()";
+  let totalCount;
+  try {
+    let result2;
+    [result2] = await conn.query(sql);
+    totalCount = result2[0]["found_rows()"];
+  } catch (err) {
+    console.log(err);
+    res.status(StatusCodes.BAD_REQUEST).end();
+  }
+
+  let pagination = {
+    currentPage,
+    totalCount,
+    books: allBooksRes.books,
+  };
+
+  res.status(StatusCodes.OK).json(pagination);
 };
 
 const bookDetail = async (req: Request, res: Response): Promise<void> => {

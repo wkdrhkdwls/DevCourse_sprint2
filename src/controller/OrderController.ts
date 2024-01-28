@@ -83,12 +83,20 @@ const getOrders = async (req: Request, res: Response): Promise<void> => {
     dateStrings: true,
   });
 
-  let sql = `SELECT orders.id, created_at, address, receiver, contact,
+  let authorization = ensureAuthorization(req, res);
+
+  if (authorization instanceof jwt.TokenExpiredError) {
+    res.status(StatusCodes.UNAUTHORIZED).json({ message: "Token expired" });
+  } else if (authorization instanceof jwt.JsonWebTokenError) {
+    res.status(StatusCodes.BAD_REQUEST).json({ message: "잘못된 토큰입니다." });
+  } else {
+    let sql = `SELECT orders.id, created_at, address, receiver, contact,
               book_title, total_quantity, total_price              
               FROM orders LEFT JOIN delivery
               ON orders.delivery_id = delivery.id`;
-  let [rows, fields] = await conn.query(sql);
-  res.status(StatusCodes.OK).json(rows);
+    let [rows, fields] = await conn.query(sql);
+    res.status(StatusCodes.OK).json(rows);
+  }
 };
 
 const getOrderDetail = async (req: Request, res: Response): Promise<void> => {
@@ -99,13 +107,20 @@ const getOrderDetail = async (req: Request, res: Response): Promise<void> => {
     database: process.env.DB_Database,
     dateStrings: true,
   });
+  let authorization = ensureAuthorization(req, res);
 
-  let sql = `SELECT book_id, title, author, price, quantity        
+  if (authorization instanceof jwt.TokenExpiredError) {
+    res.status(StatusCodes.UNAUTHORIZED).json({ message: "Token expired" });
+  } else if (authorization instanceof jwt.JsonWebTokenError) {
+    res.status(StatusCodes.BAD_REQUEST).json({ message: "잘못된 토큰입니다." });
+  } else {
+    let sql = `SELECT book_id, title, author, price, quantity        
               FROM orderedBook LEFT JOIN books
               ON orderedBook.book_id = books.id
               WHERE order_id = ?`;
-  let [rows, fields] = await conn.query(sql, [req.params.id]);
-  res.status(StatusCodes.OK).json(rows);
+    let [rows, fields] = await conn.query(sql, [req.params.id]);
+    res.status(StatusCodes.OK).json(rows);
+  }
 };
 
 export { order, getOrders, getOrderDetail };
