@@ -2,6 +2,8 @@ import mariadb from "mysql2/promise";
 import { Request, Response } from "express";
 import { config } from "dotenv";
 import { StatusCodes } from "http-status-codes";
+import ensureAuthorization from "src/auth";
+import jwt from "jsonwebtoken";
 
 config();
 const allBooks = async (req: Request, res: Response): Promise<void> => {
@@ -47,15 +49,32 @@ const bookDetail = async (req: Request, res: Response): Promise<void> => {
     database: process.env.DB_Database,
     dateStrings: true,
   });
-  let { user_id } = req.body;
-  let book_id = req.params.id;
+  // 로그인 상태가 아니면 => liked 빼고 보내주면 되고
+  // 로그인 상태이면 => liked도 추가해서
+  let authorization = ensureAuthorization(req, res);
 
-  let sql =
-    "SELECT *, (SELECT COUNT(*) FROM likes WHERE liked_book_id = books.id) AS likes, (SELECT EXISTS (SELECT * FROM likes WHERE user_id = ? AND liked_book_id = ?)) AS liked FROM books LEFT JOIN category ON books.category_id = category.id WHERE books.id = ?;";
+  if (authorization instanceof jwt.TokenExpiredError) {
+    res.status(StatusCodes.UNAUTHORIZED).json({ message: "Token expired" });
+  } else if (authorization instanceof jwt.JsonWebTokenError) {
+    res.status(StatusCodes.BAD_REQUEST).json({ message: "잘못된 토큰입니다." });
+  } else if (authorization instanceof ReferenceError) {
+    let book_id = req.params.id;
+    let sql =
+      "SELECT *, (SELECT COUNT(*) FROM likes WHERE liked_book_id = books.id) AS likes FROM books LEFT JOIN category ON books.category_id = category.id WHERE books.id = ?;";
 
-  let values = [user_id, book_id, book_id];
-  let [results] = await conn.execute(sql, values);
-  res.status(StatusCodes.OK).json(results);
+    let values = [book_id];
+    let [results] = await conn.execute(sql, values);
+    res.status(StatusCodes.OK).json(results);
+  } else {
+    let book_id = req.params.id;
+
+    let sql =
+      "SELECT *, (SELECT COUNT(*) FROM likes WHERE liked_book_id = books.id) AS likes, (SELECT EXISTS (SELECT * FROM likes WHERE user_id = ? AND liked_book_id = ?)) AS liked FROM books LEFT JOIN category ON books.category_id = category.id WHERE books.id = ?;";
+
+    let values = [authorization.id, book_id, book_id];
+    let [results] = await conn.execute(sql, values);
+    res.status(StatusCodes.OK).json(results);
+  }
 };
 
 export { allBooks, bookDetail };
