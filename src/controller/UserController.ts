@@ -58,7 +58,7 @@ const login = async (req: Request, res: Response): Promise<void> => {
         },
         process.env.PRIVATE_KEY,
         {
-          expiresIn: "3m",
+          expiresIn: "10m",
           issuer: "pang",
         }
       );
